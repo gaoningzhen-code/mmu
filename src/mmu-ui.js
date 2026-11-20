@@ -95,12 +95,13 @@
       else cb && cb(false);
     }).catch(function () { cBusy = false; cb && cb(false); });
   }
+  function cRefresh() { if (tab === 'set' && S) pSet(); }
   function cloudPanel() {
     if (C) {
       modal('<h4>☁️ 云存档</h4><div>账号：<b>' + esc(C.name) + '</b></div><div class="muted">上次同步：' + (cLast ? new Date(cLast).toLocaleTimeString() : '—') + '。每分钟自动同步，切到后台或关闭页面时也会同步。手机、电脑登录同一个账号即可共用进度（全部角色）。</div>' +
         '<div class="btns"><button class="pri" id="csn">立即同步</button><button id="cout">退出账号</button><button id="cx">关闭</button></div>');
-      $('csn').onclick = function () { cPush(false, function (ok) { toast(ok ? '☁️ 已同步' : '同步失败，稍后会自动重试'); cloudPanel(); }); };
-      $('cout').onclick = function () { cPush(false, function () { C = null; try { localStorage.removeItem(CKEY); } catch (e) { } closeModal(); toast('已退出云存档，进度仍保存在本机'); }); };
+      $('csn').onclick = function () { cPush(false, function (ok) { toast(ok ? '☁️ 已同步' : '同步失败，稍后会自动重试'); cRefresh(); cloudPanel(); }); };
+      $('cout').onclick = function () { cPush(false, function () { C = null; try { localStorage.removeItem(CKEY); } catch (e) { } closeModal(); cRefresh(); toast('已退出云存档，进度仍保存在本机'); }); };
       $('cx').onclick = closeModal; return;
     }
     modal('<h4>☁️ 云存档</h4><div class="muted">起一个账号名和密码。手机、电脑用同一个账号登录，进度自动同步。<br>第一次用就是注册；已有账号就是登录（会载入云端进度）。</div>' +
@@ -118,9 +119,9 @@
           if (j.data && j.ts) {
             modal('<h4>☁️ 发现云端进度</h4><div>云端存档：' + (j.data.roster.list || []).map(function (c) { return M.CLS[c.cls].n + ' Lv' + c.lvl; }).join('、') + '</div><div class="muted">本机进度：' + R.list.map(function (c) { return M.CLS[c.cls].n + ' Lv' + c.lvl; }).join('、') + '</div>' +
               '<div class="btns"><button class="pri" id="cuc">用云端进度</button><button id="cul">用本机进度覆盖云端</button></div>');
-            $('cuc').onclick = function () { if (applyAll(j.data)) { C.ts = j.ts; cSave(); cLast = Date.now(); closeModal(); build(); toast('☁️ 已载入云端进度'); } };
-            $('cul').onclick = function () { C.ts = j.ts; cSave(); cPush(false, function (ok) { closeModal(); toast(ok ? '☁️ 已用本机进度覆盖云端' : '同步失败'); }); };
-          } else { cPush(false, function (ok) { closeModal(); toast(j.created ? '☁️ 注册成功，进度已上传' : '☁️ 已登录并同步'); }); }
+            $('cuc').onclick = function () { if (applyAll(j.data)) { C.ts = j.ts; cSave(); cLast = Date.now(); closeModal(); build(); cRefresh(); toast('☁️ 已载入云端进度'); } };
+            $('cul').onclick = function () { C.ts = j.ts; cSave(); cPush(false, function (ok) { closeModal(); cRefresh(); toast(ok ? '☁️ 已用本机进度覆盖云端' : '同步失败'); }); };
+          } else { cPush(false, function (ok) { closeModal(); cRefresh(); toast(j.created ? '☁️ 注册成功，进度已上传' : '☁️ 已登录并同步'); }); }
         });
       }).catch(function () { $('cmsg').textContent = '连接失败（本地打开的文件不支持云存档，请用网址打开）'; });
     };
@@ -588,7 +589,7 @@
       '<div class="r"><span>自动穿戴（会打乱搭配，建议只补空位）</span><select id="aeq"><option value="empty">只补空位</option><option value="better">更好就换</option><option value="off">关闭</option></select></div>' +
       '<div class="r"><span>生命低于 <b id="pv">' + st.potAt + '</b>% 自动喝药</span><input type="range" id="pa" min="20" max="80" step="5" value="' + st.potAt + '"></div>' +
       '<div class="r"><span>药水不足时自动购买</span><input type="checkbox" id="ab"' + (st.autoBuy ? ' checked' : '') + '></div>' +
-      '<div class="r"><span>☁️ 云存档（手机电脑同步）' + (C ? '：<b>' + esc(C.name) + '</b>' : '：未登录') + '</span><button class="sm pri" id="cloudBtn">' + (C ? '管理' : '登录 / 注册') + '</button></div>' +
+      '<div class="r"><span>☁️ 云存档（手机电脑同步）' + (C ? '：<b>' + esc(C.name) + '</b>' + (cLast ? ' <span class="muted">· ' + new Date(cLast).toLocaleTimeString() + ' 已同步</span>' : '') : '：未登录') + '</span><button class="sm pri" id="cloudBtn">' + (C ? '管理' : '登录 / 注册') + '</button></div>' +
       '<div class="r"><span>存档备份（存在本浏览器，清缓存会丢失）</span><span><button class="sm" id="exp">导出存档</button> <button class="sm" id="imp">导入存档</button></span></div>' +
       '<div class="r"><span>切换角色 / 新建角色（各自进度独立保存）</span><button class="sm pri" id="rst">👥 我的角色</button></div></div>' +
       '<div class="muted" style="margin-top:10px">MMU v0.1 · 搭配核心测试版 · 数值会根据试玩反馈调整</div>';
